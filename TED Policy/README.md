@@ -9,13 +9,13 @@
 
 Rasa 0.x.x 혹은 1.x.x 버전에서 사용되던 **embedding_policy** , **keras_policy** 는 2.x.x 버전으로 업그레이드되면서 TED Policy로 통합되었다.  
 
-<img alt="embedding_policy", src="https://user-images.githubusercontent.com/43739827/98545008-268d3200-22d8-11eb-8065-050f499198dc.PNG"></img>  
+<img src="https://user-images.githubusercontent.com/43739827/98545008-268d3200-22d8-11eb-8065-050f499198dc.PNG"></img>  
 > Fig 1. Embedding Policy Rasa Docs 안내문
 
-<img alt="keras_policy", src="https://user-images.githubusercontent.com/43739827/98545294-9f8c8980-22d8-11eb-8026-b478d5471691.png"></img>  
+<img src="https://user-images.githubusercontent.com/43739827/98545294-9f8c8980-22d8-11eb-8026-b478d5471691.png"></img>  
 > Fig 2. Legacy Rasa에서 keras policy를 사용했을 때 나타나는 경고문  
 
-
+## Feature
 
 ## Reference  
 
