@@ -17,11 +17,29 @@ Rasa 0.x.x 혹은 1.x.x 버전에서 사용되던 **embedding_policy** , **keras
 
 ## Feature
 
+TED policy의 특징은 training story를 통해 대화의 flow가 방해되지 않도록 할 수 있다는 점이다.  
+
+아래와 같은 스토리가 있다고 가정한다.  
+
+<img src="https://user-images.githubusercontent.com/43739827/98654075-2e54e100-2381-11eb-8f5e-6b35a1ffb531.PNG"></img>  
+> Fig 3. example story  
+
+이 story를 테스트하기 위해서 **config.yml** 의 policy에서 TED Policy를 선언하고 **max_history** 파라미터의 값을 지속적으로 변경해보고자 한다.  
+
+<img src="https://user-images.githubusercontent.com/43739827/98654477-b804ae80-2381-11eb-9ba6-079fcb7c7c04.PNG"></img>  
+> Fig 4. config.yml policies  
+
+## TED with max_history  
+
 ## Reference  
 
-* [1] [Demonstration of TED Policy in Rasa Dialogue Management](https://blog.rasa.com/demonstration-of-our-ted-policy/)  
+[1] [Demonstration of TED Policy in Rasa Dialogue Management](https://blog.rasa.com/demonstration-of-our-ted-policy/)  
 
-* [2] [Unpacking the TED Policy in Rasa Open Source](https://blog.rasa.com/unpacking-the-ted-policy-in-rasa-open-source/)  
+[2] [Unpacking the TED Policy in Rasa Open Source](https://blog.rasa.com/unpacking-the-ted-policy-in-rasa-open-source/)  
 
-* [3] [Dialogue Transformers](https://arxiv.org/pdf/1910.00486.pdf)  
+[3] [Dialogue Transformers](https://arxiv.org/pdf/1910.00486.pdf)  
  Vladimir Vlasov, Johannes E. M. Mosig, Alan Nichol
+
+[4] [Rasa Algorithm Whiteboard - TED Policy](https://www.youtube.com/watch?v=j90NvurJI4I)
+
+[5] [Rasa Algorithm Whiteboard - TED in Practice](https://www.youtube.com/watch?v=d8JMJMvErSg&feature=emb_title)
