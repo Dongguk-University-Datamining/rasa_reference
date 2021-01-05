@@ -23,6 +23,29 @@ Rasa가 제공하는 가장 기초적인 모델을 커맨드를 통하여 불러
 
 # 2. 실행 방법
 
+Rasa를 실행하는 방법으로는 목적에 따라 크게 두 가지로 나뉜다.
+1.	Rasa 명령어를 통해 action 서버와 model을 연결하여 사용자와 bot간의 대화
+2.	커스텀 서버를 통해 Facebook messenger, telegram등과 같은 외부와 연결하여 챗봇 사용
+해당 문서에서는 1을 중점으로 다루어 설명한다.
+
+2-1. action server와 model 연결
+ 시작하기 앞서 여기서 설명하는 action 서버란 사용자의 task에 맞게 설계되어 있는 actions.py를 bot이 사용하도록 하는 것으로, 후에 서술할 domain에  
+정의되어있는 utterance만을 사용한다면 action 서버를 사용하지 않아도 된다.  
+만약 actions.py를 사용하는 프로젝트라면 터미널을 통해 해당 프로젝트의 디렉토리로 이동한 뒤 **rasa run actions** 를 입력하여 action 서버를 실행시킨다.  
+후에 별도의 터미널을 실행하여 마찬가지로 해당 프로젝트의 디렉토리로 이동한 뒤 rasa shell을 입력하여 model을 불러온다.  
+정상적으로 실행된다면 rasa shell을 입력한 터미널에서 사용자의 input을 받으며 bot의 output이 출력된다.
+
+![image](https://user-images.githubusercontent.com/43739827/103650320-2c835480-4fa3-11eb-9c88-e98dc0932d61.png)
+> Fig 5. Rasa run actions and rasa shell
+
+2-2 외부 연결
+ Rasa를 외부 인터페이스나 다른 서버에 연결시키기 위해서는 프로젝트 파일 내부의 credentials.yml 파일에서 token이나 proxy등을 일치시켜 사용해야한다.  
+대부분 양 쪽의 포트가 일치해야 하기 때문에 이 때 action 서버를 사용하지 못하는 경우가 많으며, 이런 부분을 보완하기 위해 facebook messenger나  
+telegram 등에서는 별도의 기능들이 존재한다.  
+
+![image](https://user-images.githubusercontent.com/43739827/103650400-4d4baa00-4fa3-11eb-87c0-ad462de9fc35.png)
+> Fig 6. Facebook messenger channel connect example
+
 # 3. Training Data
 
 # 4. Domain
