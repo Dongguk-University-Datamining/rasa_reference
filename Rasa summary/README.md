@@ -253,4 +253,110 @@ Slot이 다음 action을 예측하는 데 영향을 미치지 않도록 하고 �
 
 # 5. Configuration
 
+Configuration 파일은 component와 policy를 정의하여 모델이 사용자의 input을 기반으로 예측할 수 있도록 하는 역할을 한다. 파일 내부에선 (1) language, (2) pipeline, (3) policies를 명시해야 하는데 (1) language와 (2) pipeline은 component를 명시해 모델이 Nlu 예측을 하도록 하는 역할을 하며 (3) policies는 모델이 다음 action을 예측하도록 하는 역할을 한다.  
+이 configuration 파일은 프로젝트 폴더 내부의 config.yml이 담당하고 있다.  
+
+![image](https://user-images.githubusercontent.com/43739827/104092269-36b89200-52c6-11eb-91cf-0d542b8f372f.png)
+> Fig 34. config.yml
+
+5-1. Language support  
+
+Rasa를 이용한 챗봇을 설계할 때는 모델에서 사용될 언어 코드를 기입해야 한다. 어떤 언어든 사용할 수 있으며 language model로부터 pre-train된 word vector를 불러와 유사도를 측정하지만 만약 pre-train된 모델이 존재하지 않은 언어라면 training data에서 스스로 언어의 특징을 training한다. Rasa에서는 language model로 spaCy를 지원하고 있으므로 지원하는 언어 모델을 패키지 사이트에서 사전에 확인하는 것이 좋다.
+
+![image](https://user-images.githubusercontent.com/43739827/104092277-49cb6200-52c6-11eb-9a31-2550cf53728e.png)
+> Fig 35. Support language list  
+
+만약 사용하고자 하는 언어가 spaCy에서 지원하지 않는다면 “xx(multi-language)”로 언어를 정의하고 사용하면 된다.  
+
+Pre-train된 language model을 사용하는 이유로는 이런 모델들이 위키피디아 같은 방대한 양의 텍스트를 train하여 word vector를 이미 구해놨기 때문에 개발자는 적은 training data 만으로도 훌륭한 성능을 낼 수 있기 때문이다.
+
+5-2. Components  
+
+Rasa에서 사용되는 component들은 (1) Tokenizer, (2) Featurizer, (3) Intent classifier, (4) Entity extractor, (5) Selector, (6) Custom component 총 6개의 범주로 나뉜다.
+
+![image](https://user-images.githubusercontent.com/43739827/104092302-77181000-52c6-11eb-82fe-020bc7bb6236.png)
+> Fig 36. Components pipeline
+
+5-2-1. Tokenizers  
+
+Tokenizer의 역할은 문장 텍스트를 나누어 토큰화하는 것이다. [Fig 36]에서는
+“WhitespaceTokenizer”가 사용되었으며 사용자의 메시지, response, intent를 공백을 기준으로 나누는 역할을 한다.
+
+5-2-2. Featurizers  
+
+Featurizer는 (1) sparse featurizer와 (2) dense featurizer 2개의 type으로 나뉜다. (1) sparse featurizer의 경우 featurize할 때 많은 결측 값들을 포함한 feature vector를 반환한다(ex. 영행렬). feature vector는 일반적으로 bot의 많은 메모리를 차지하는 데, sparse featurizer는 0이 아닌 값과 벡터 내부 값들의 위치만을 저장해 메모리를 많이 절약할 수 있고 방대한 training data를 train하기에 적합하다.  
+
+또한 모든 featurizer (1) sequence featurize, (2) sentence featurize 두 종류의 featurize를 반환한다. (1) sequence featurize의 행렬 크기는 [(토큰의 개수) X (feature 차원)]이며 이 행렬엔 모든 토큰의 feature vector를 순차적으로(in the sequence) 포함하고 있다. 즉, sequence model을 training 할 수 있도록 하는 것이다. (2) sentence featurize의 행렬 크기는 [1 X (feature 차원)]이며 이 행렬엔 온전한 발화(complete utterance)의 feature vector를 포함한다. 이 sentence featurize는 bag-of-words 모델에 사용할 수 있다는 장점이 있다.  
+
+[Fig 36]에서는 “RegexFeaturizer”, “LexicalSyntacticFeaturizer”, “CountVectorsFeaturizer”가 featurizer로써 사용되었다. RegexFeaturizer는 sparce featurizer로 정규 표현식을 사용하여 사용자의 메시지에서 벡터를 생성한다. 생성한 feature는 entity 추출이나 intent 분류에 사용되며, 이 featurize에서 사용될 정규 표현식은 nlu에서 정의하며 regex의 이름을 intent나 entity 이름과 대응시킬 필요는 없다.
+
+![image](https://user-images.githubusercontent.com/43739827/104092334-a9297200-52c6-11eb-975a-f64c99600ef7.png)
+> Fig 37. Regex expression example  
+
+LexicalSyntacticFeaturizer는 sparse featurizer로 엔티티 추출을 위해 사용자의 메시지에서 lexical/syntactic feature를 생성한다.  
+
+CountVectorsFeaturizer는 sparse featurizer로 사용자의 메시지, intent, response를 bag-of-words로 생성한다. [Fig 36]을 예로 들면 analyzer char_wb는 character n_gram을 사용하며 boundary를 min_ngram, max_ngram으로 설정하고 특정 값을 명시해주지 않는다면 default value는 각각 1이다.
+
+5-2-3. Intent classifier  
+
+Intent classifier는 domain에 정의되어 있는 intent중 하나를 user message에 할당하는 역할을 한다. 이 중 DIET(Dual Intent Entity Transformer) Classifier는 Intent 분류와 Entity 추출에 사용된다. 만약 DIETClassifier를 Intent 분류에만 사용하고 싶다면 “entity_recognition”의 값을 false로 정의하고, 반대로 entity 추출에만 사용하고 싶다면 “intent_classification”의 값을 true로 정의하면 된다. 아무런 값도 정의하지 않는다면 entity_recognition과 intent_classification의 값은 true로 인식된다.  
+
+다른 intent classification인 FallbackClassifier는 입력받은 메시지에 대해 nlu classification의 값이 모호하다면 nlu_fallback intent로 처리하는 역할을 한다. 이 때 nlu_fallback의 confidence는 “1-top intent confidence”이다.
+
+5-2-4. Entity extractor  
+
+Entity extractor는 사용자의 메시지로부터 이름이나 장소 같은 entity value를 추출한다. 이 중 EntitySynonymMapper는 training data에 정의되어 있는 synonym을 문장의 entity와 동일하게 mapping하는 역할을 한다.
+
+5-2-5. Selector  
+
+Selector는 response action을 사용하기 위해서 반드시 정의해야 하는 component이다. training epoch와 retrieval intent를 명시하여 해당 intent에 대한 training을 진행한다. 자세한 내용은 6. Action에서 서술한다.
+
+5-3. Policies  
+
+Policy는 사용자의 메시지가 입력되고 난 후 다음에 출력될 action을 예측하는 역할을 한다. config.yml에서 policies 아래에 명시하며, (1) machine-learning policy와 (2) rule-based policy로 나뉜다.
+
+![image](https://user-images.githubusercontent.com/43739827/104092376-e4c43c00-52c6-11eb-8f49-5a3136cafa5a.png)
+> Fig 38. Defines policies  
+
+5-3-1. Machine-leaning policy  
+
+Machine-leaning policy는 대표적으로 (1) TED policy와 (2) Memoization policy 2개가 있다.
+(1) TED(Transformer Embedding Dialogue) policy는 “Transformer architecture”를 기반으로 하는 policy이다. 기존의 Rasa는 계층적인(hierarchical) RNN 구조를 사용해왔다. 그러나 기본적으로 RNN 아키텍처는 하나의 시퀀스에 포함된 모든 데이터가 전체 시퀀스로부터 인코딩되어 생성되는 결과에 영향을 미친다고 추측한다. 하지만 인간의 대화에서 단일 대화 내 발화자들이 여러 주제를 말하는 경우가 존재한다. 이는 한 번의 발화가 전체 대화의 흐름에 영향을 미치지 않을 수 있다는 것이다. 이런 이유로 Rasa는 기존 RNN 아키텍처를 포기하고 TED policy를 사용하게 되었다.  
+
+TED policy의 특징 중 하나는 train story를 통해 대화의 flow가 방해되지 않도록 할 수 있는 점이다. 아래의 [Fig 39]와 같은 story example이 있다고 가정하자.
+
+![image](https://user-images.githubusercontent.com/43739827/104092395-01607400-52c7-11eb-8ce9-4aacdd5ce7fa.png)
+> Fig 39. Story example  
+
+또한 config.yml에서 TED policy를 선언하고 max_history 파라미터의 값으로 정수를 선언한 뒤 정해진 story flow에서 벗어났을 때 다시 돌아올 수 있는지를 확인한다.  
+
+![image](https://user-images.githubusercontent.com/43739827/104092403-0f15f980-52c7-11eb-8b55-fc666bd9cf19.png)
+> Fig 40. TED policy and parameter  
+
+![image](https://user-images.githubusercontent.com/43739827/104092409-1a692500-52c7-11eb-981c-4ef58b6a2db7.png)
+> Fig 41. Story flow test  
+
+정의된 story의 flow대로라면 ask_emotion intent에서 bot_emotion의 entity value가 happy이면 두 개의 action이 출력된 후 change_topic intent가 입력되고 이에 대응하여 정의된 action이 출력되면서 story의 flow가 끝나야 한다. 그러나 위의 예제에서 story flow에서 정의되어 있지 않은 intent의 문장 “Wait Wait, I have to pick this phone call.”이 입력되었고 bot 또한 story에 정의되어있지 않은 action(fallback action)이 출력되었다. max_history는 사용자와 bot의 대화들을 저장해 둔 turn의 값 만큼 저장해놓기 때문에 flow가 방해된 후 정의된 intent를 입력하여 story의 flow를 끝마치는 것을 확인할 수 있다.  
+
+max_history 값은 story의 길이를 고려하여 정의해야 한다. 하나의 turn은 사용자가 문장을 입력할 때 까지로 취급한다. 예를 들어 [Fig 39]의 경우 사용자가 3번을 입력하기 때문에 [Fig 39]의 flow를 정상적으로 마치기 위해서는 적어도 4의 max_history가 필요하다. 만약 max_history가 3이라면 utter_you_are_welcome까지 flow가 진행되고 change_topic intent를 사용자가 입력했을 때 bot은 새로운 story가 시작되었다고 판단하게 된다. 그렇기 때문에 story의 flow가 벗어남을 감안한다면 max_history는 최소 5 이상이어야 한다.  
+
+(2) Memoization policy는 training data의 story들을 memory를 통해 기억하고 있다가 현재 user와 bot의 대화가 stories.yml 파일에 선언된 story와 대응하는지를 확인한다. 만약 대응하는 story가 존재한다면 해당 story를 통해 다음 action을 예측하고(confidence: 1.0), 만약 대응하는 story가 없다면 None을 예측한다(confidence: 0.0)
+Memoization이 story를 대응시킬 때 TED policy와 마찬가지로 “max_history”를 사용한다.
+
+![image](https://user-images.githubusercontent.com/43739827/104092420-3240a900-52c7-11eb-94ad-4b90377f2230.png)
+> Fig 42. Memoization Policy  
+
+5-3-2. Rule-based policy  
+
+Rule Policy는 대화에서 반드시 사용되는 일부분을 다루는 역할을 한다. 예를 들어 사용자가 “hi, how are you?”라고 물었을 때 “good” 혹은 “fine”을 반드시 bot이 출력하도록 하는 것이다.  
+
+또한 Rule Policy는 fallback action을 사용하기 위해서 반드시 정의해주어야 한다. 이 때 사용해야하는 설정으로 “core_fallback_threshold”, “core_fallback_action_name”, “enable_fallback_prediction”이 있다.
+
+![image](https://user-images.githubusercontent.com/43739827/104092430-42f11f00-52c7-11eb-80a2-6ba13429c4f1.png)
+> Fig 43. RulePolicy  
+
+core_fallback_threshold는 user의 메시지 이후 예측되는 다음 action들의 confidence가 일정 값 미만이라면 fallback action을 출력하도록 하는 것이다.  
+
+core_fallback_action_name에서는 사용할 fallback action의 이름을 명시하며, enable_fallback_prediction은 fallback action을 출력할 지 여부를 boolean 값으로 정의한다.
+
 # 6. Actions
