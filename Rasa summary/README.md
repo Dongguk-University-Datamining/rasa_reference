@@ -360,3 +360,157 @@ core_fallback_threshold는 user의 메시지 이후 예측되는 다음 action�
 core_fallback_action_name에서는 사용할 fallback action의 이름을 명시하며, enable_fallback_prediction은 fallback action을 출력할 지 여부를 boolean 값으로 정의한다.
 
 # 6. Actions
+
+사용자의 message가 입력될 때 마다 모델은 bot이 다음에 수행 할 action을 출력한다. action의 범주는 1) Response, 2) Retrieval action, 3) Custom action, 4) Form action, 5) Fallback action, 6) Default action으로 나뉜다.
+
+6-1. Response  
+
+Response는 bot이 사용자에게 보내는 메시지다. 텍스트로만 사용할 수 있으나 이미지나 버튼만은 사용이 가능하다.  
+Response의 정의는 Domain의 response section에 정의한다(4-4 참조). 각 response의 이름 앞에는 반드시 “utter_”로 시작해야 함을 인지해야 한다.
+
+![image](https://user-images.githubusercontent.com/43739827/104123626-a8104780-538f-11eb-8ecc-a66cc202ec22.png)
+> Fig 44. Response example  
+
+[Fig 44]에서 볼 수 있는 것처럼 각 문장은 “- text”로 표기를 해주어야 하며 큰 따옴표를 사용하지 않아도 된다. 또한 문장 내에서 {}를 통해 채워진 slot을 출력할 수 있다.   
+
+![image](https://user-images.githubusercontent.com/43739827/104123641-b8282700-538f-11eb-9969-7ca2bcf15b80.png)
+> Fig 45. Response uses slot value  
+
+이렇게 작성된 response는 story에서 action으로 사용된다.  
+
+![image](https://user-images.githubusercontent.com/43739827/104123650-cd9d5100-538f-11eb-8dd6-36cc74ccbfaf.png)
+> Fig 46. Story uses utter action  
+
+또한 actions.py에서 dispatcher를 통해 action server에서 response message를 출력할 수 있다.  
+
+![image](https://user-images.githubusercontent.com/43739827/104123660-e1e14e00-538f-11eb-8422-408776afa844.png)
+> Fig 47. Dispatcher  
+
+6-2. Retrieval action  
+
+Retrieval은 하나의 intent를 작은 소분류로 나누고 이에 해당하는 action을 출력하도록 하는 것이다. 먼저 retrieval intent를 다른 intent와 마찬가지로 nlu.yml에서 정의한다. 이 때 “/”를 이용해 각 범주에 대해 명시해야 한다.
+
+![image](https://user-images.githubusercontent.com/43739827/104123668-f0c80080-538f-11eb-89a3-a87a35a36f0b.png)
+> Fig 48. Retrieval intent  
+
+Retrieval action을 사용하기 위해서는 먼저 config.yml에서 ResponseSelector를 pipeline에 선언하고 “retrieval_intent”에 사용할 intent의 이름을 명시한다.  
+
+![image](https://user-images.githubusercontent.com/43739827/104123685-03423a00-5390-11eb-8c07-519e18353f22.png)
+> Fig 49. ResponseSelector  
+
+다음으로 domain에서 response section에 retrieval action을 정의하며, response처럼 이름 앞에 “utter_”를 추가해야 한다.  
+
+![image](https://user-images.githubusercontent.com/43739827/104123697-1228ec80-5390-11eb-897e-8593652eea5a.png)
+> Fig 50. Retrieval action  
+
+Retrieval은 최종적으로 rule.yml에서 intent와 action을 명시한다. 즉, retrieval intent는 다른 action과 함께 쓰일 수 없고 반대로 retrieval action은 다른 intent와 함께 쓰일 수 없다.  
+
+![image](https://user-images.githubusercontent.com/43739827/104123712-27058000-5390-11eb-81db-98e4db1d93fb.png)
+> Fig 51. Rule defines retrieval  
+
+6-3. Custom action  
+
+Action server를 실행시키기 위해서는 actions.py를 이용해 코드를 작성해야 한다. 일반적인 action과의 차이점으로는 bot의 출력으로 외부 api를 불러오거나 특정 slot value에 대한 조건을 정할 수 있다. actions.py에서는 일반적으로 rasa_sdk 패키지가 주로 사용된다.
+
+![image](https://user-images.githubusercontent.com/43739827/104123734-384e8c80-5390-11eb-97dc-0c8d4ea7f595.png)
+> Fig 52. actions.py libraries  
+
+하나의 action은 class 내부에 함수가 선언되어 세부 사항을 정의하는 방식이다.  
+
+![image](https://user-images.githubusercontent.com/43739827/104123746-47353f00-5390-11eb-81a1-e4494714ba97.png)
+> Fig 53. Custom action  
+
+위의 틀은 크게 바뀌지 않는다. class로 (Action)을 선언하고 def name을 통해 action의 이름을 정의하며 이 이름은 domain의 action section에서 명시한 이름과 동일해야 한다. slot을 사용하기 위해서는 “tracker.get_slot(“<slot_name>”)”을 사용하며 이 때 선언한 변수의 이름으로 slot에 대한 조건문을 정의할 수 있다.  
+
+6-4. Form action  
+
+Form은 외부 api 실행이나 식당 예약등을 위해 몇 번의 대화를 모아 하나의 정보를 완성시키는 역할을 한다. Form action을 사용하기 위해서는 config.yml에서 RulePolicy를 선언해야 한다.  
+Form은 domain에서 정의해 사용한다. 이 때 명시한 form의 이름은 story나 rule에서 action으로 사용한다.
+
+![image](https://user-images.githubusercontent.com/43739827/104123764-5f0cc300-5390-11eb-847e-a404f5848d7d.png)
+> Fig 54. Domain form section  
+
+[Fig 54]를 예로 들면 해당 form의 이름은 “restaurant_form”으로 cuisine slot은 cuisine entity에서 값을 추출해 채우게되고, num_people slot은 number entity에서 값을 추출해 채우게된다.
+Form을 활성화하기 위해서는 story나 rule에서 명시해야 한다.
+
+![image](https://user-images.githubusercontent.com/43739827/104123772-6df37580-5390-11eb-9a87-a52111c682a0.png)
+> Fig 55. Rule adds form action  
+
+[Fig 55]의 경우 request_restaurant intent는 form action을 실행시키는 트리거다. 마지막에 사용된 “active_loop: restaurant_form”은 form action이 요구하는 slot이 전부 채워질 때 까지 반복하도록 하는 것이다.  
+
+Form은 요구되는 모든 slot이 채워지면 스스로 비활성화 되도록 설계되어있다. 그러나 개발자는 story나 rule에서 form을 끝내는 특정 조건을 명시할 수 있다.  
+
+![image](https://user-images.githubusercontent.com/43739827/104123791-806daf00-5390-11eb-8271-67eefd86e3a8.png)
+> Fig 56. Form deactivate  
+
+[Fig 56]에선 restaurant_form이 채워지면 utter_submit과 utter_slots_values가 출력된다.  
+Form이 slot을 채우는 방식으로는 (1) from_entity, (2) from_text, (3) from_intent 세 가지가 존재하며 각각 type으로 명시한다. (1) from_entity는 추출된 entity를 기반으로 slot을 채운다. 이 때 entity name을 명시하여 추출할 entity를 지정해주고, 만약 특정 intent name을 명시해주게 되면 해당 intent에서 사용된 entity를 추출하게 된다. intent name을 명시하지 않는다면 전체 intent에서 해당하는 entity를 추출한다.  
+
+![image](https://user-images.githubusercontent.com/43739827/104123820-9da27d80-5390-11eb-9111-e68d6d7ed825.png)
+> Fig 57. Type from entity not uses specific intent  
+
+(2) from_text는 사용자의 다음 발화를 slot에 채운다. 만약 특정 intent name을 명시하지 않는다면 slot은 intent에 의존하지 않고 발화를 slot에 채우지만 특정한 intent를 명시하였다면 해당 intent와 대응하는 발화를 slot에 채운다.  
+만약 특정 intent는 slot에 채워지지 않도록 하기 위해서는 “not_intent: <intent_name>”을 명시한다.
+
+![image](https://user-images.githubusercontent.com/43739827/104123835-b01cb700-5390-11eb-8db9-fb63c5f7e6e5.png)
+> Fig 58. Type from text uses not_intent  
+
+(3) from_intent는 사용자의 intent가 특정 intent이거나 None일 경우 지정한 value를 slot에 채운다. from_text와 마찬가지로 not_intent를 통해 특정 intent는 slot을 채우는 데 해당하지 않도록 지정할 수 있다. 그러나 from_intent는 form의 초기 실행에서는 사용할 수 없다는 단점이 있다.  
+
+![image](https://user-images.githubusercontent.com/43739827/104123850-c460b400-5390-11eb-8d1a-7157e400ce22.png)
+> Fig 59. Type from intent uses not_intent  
+
+6-5. Fallback action  
+
+Fallback action에는 두 가지가 존재한다.  
+1.	nlu에 threshold를 지정하여 intent가 이 threshold를 넘지 못하면 특정 response를 출력  
+2.	core에 threshold를 지정하여 예측되는 다음 action이 threshold를 넘지 못하면 custom action을 출력  
+
+1의 경우 config.yml에서 pipeline의 component로 “FallbackClassifier”를 명시해야 한다. 해당 component에서는 threshold와 ambiguity_threshold를 정의할 수 있다. threshold는 user의 메시지로 예측되는 intent가 정의된 값을 넘지 못하면 fallback을 출력하는 역할을 하고, ambiguity_threshold는 가장 높은 confidence를 가진 두 개의 예측 intent가 정의된 값에 가깝다면 fallback을 출력하도록 하는 역할을 한다.  
+
+![image](https://user-images.githubusercontent.com/43739827/104123879-e2c6af80-5390-11eb-94a7-a0818245a1ae.png)
+> Fig 60. FallbackClassifier uses threshold and ambiguity threshold  
+
+이후 domain의 response section에서 출력 될 fallback action을 생성한다.  
+
+![image](https://user-images.githubusercontent.com/43739827/104123888-f245f880-5390-11eb-943b-19aa352ee676.png)
+> Fig 61. Fallback action(response)  
+
+사용될 action이 정의되면 rule.yml에서 fallback으로 intent와 생성된 action을 대응시켜줘야 하는데, 이 때 intent의 이름으로는 “nlu_fallback”을 사용한다.  
+
+![image](https://user-images.githubusercontent.com/43739827/104123897-04279b80-5391-11eb-9c8c-11518efe8ee7.png)
+> Fig 62. Defines fallback in rule.yml  
+
+이 nlu_fallback은 threshold를 넘지 못한 intent를 통칭하는 것으로, 따로 nlu_fallback이라는 이름을 가진 intent를 생성할 필요는 없다.  
+2의 경우 config.yml의 policies에서 RulePolicy를 선언하고 “core_fallback_threshold”, “core_fallback_action_name”, “enable_fallback_prediction”을 통해 action에 대한 fallback을 예측한다.
+
+![image](https://user-images.githubusercontent.com/43739827/104123905-13a6e480-5391-11eb-9501-13f9768840f8.png)
+> Fig 63. Defines core fallback  
+
+core_fallback_threshold는 다음 출력으로 예상되는 action이 정의된 threshold를 넘지 못하면 특정 action을 출력되도록 하는 역할이며, core_fallback_action_name은 그 때 출력될 action의 이름을 enable_fallback_prediction은 fallback action의 사용 여부를 boolean 값으로 결정하는 역할을 한다.  
+core fallback의 경우 nlu fallback과 다르게 rule이나 domain등에서 별도의 추가 없이 사용할 action만을 추가하면 된다. 만약 response가 아닌 custom action을 사용하고자 한다면,
+
+![image](https://user-images.githubusercontent.com/43739827/104123914-23bec400-5391-11eb-953a-2937a6b955f4.png)
+> Fig 64. Custom fallback action  
+
+[Fig 64]와 같이 정의하며 action의 이름, dispatcher.utter_message의 template에 사용될 response의 이름만 명확하게 명시해주면 된다.
+
+6-6. Default action  
+
+Default action은 기본적으로 정의되어 있는 action으로 별도로 생성하지 않고 사용할 수 있으며 개발자는 해당 역할을 하는 action을 custom action으로 대체하여 사용할 수 있다.
+
+6-6-1. action_listen  
+
+이 action은 사용자의 input을 아무런 반응을 하지 않고 대기하는 것이다. action_listen은 사실 rule에서 생성한 example을 맨 마지막에 자동적으로 추가된다. 그러므로 하나의 rule이 끝나면 반드시 사용자의 input을 기다리게 되는데, 이것을 단점으로는 rule과 story가 합쳐져 사용될 경우 원하는 flow가 출력되지 않을 수 있다. 그렇기 때문에 action_listen을 사용하지 않기 위해서는 하나의 rule 마지막에 “wait_for_user_input: false”를 추가 작성해야 한다. 만약 이 값을 true로 사용하거나 따로 추가하지 않는다면 action_listen을 마지막에 사용하겠다는 의미가 된다.
+
+![image](https://user-images.githubusercontent.com/43739827/104123927-346f3a00-5391-11eb-856e-c5286932066d.png)
+> Fig 65. Ignore action_listen  
+
+6-6-2. action_restart  
+
+action_restart는 전체 대화의 history를 reset하는 역할을 한다. 이 action은 config.yml에서 RulePolicy가 사용될 때 input으로 “/restart”를 입력하면 작동한다.  
+ 만약 domain에 utter_restart라는 response를 생성하고 안에 문장을 추가한다면 “/restart”를 입력했을 때 세션이 reset 되는 동시에 특정 문장이 출력되게 된다.
+
+6-6-3. action_default_fallback  
+
+fallback action을 사용할 때 특정 fallback action을 생성하여 사용했으나 Rasa에는 기본적으로 제공되어 사용되는 기본 fallback action이 있다. 만약 fallback action을 따로 생성하지 않겠다면 rule이나 config에서 action_default_fallback을 action 이름으로 명시하면 된다.
